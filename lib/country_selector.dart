@@ -5,6 +5,7 @@ export 'const/enum.dart';
 export 'const/country.dart';
 
 import 'dart:async';
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:country_selector_widget/country_selector.dart';
 import 'package:country_selector_widget/data/coutnry_list.dart';
@@ -24,10 +25,10 @@ Future<void> showCountrySelectorBottomSheet({
   // Sets the Custom AppBar instead of using provided default AppBar
   PreferredSizeWidget? customAppBar,
   // Sets the height for the bottom `Continue Section` widget
-  double bottomAppBarHeight = 75,
+  double bottomAppBarHeight = 25,
   // The Padding between the bottom `Continue Section` and `Continue Button` widget
   EdgeInsetsGeometry continueBtnPadding =
-      const EdgeInsets.symmetric(vertical: 13.5),
+      const EdgeInsets.symmetric(vertical: 5.5),
   // Uses to determine the default label with locale, there are three `SelectedLocale`. They are `SelectedLocale.en`, `SelectedLocale.zhCH` and `SelectedLocale.zhHK`
   SelectedLocale selectedLocale = SelectedLocale.en,
   // Uses to determine wether show the `CountryCardWidget` or not when the country is selected in the ListView
@@ -57,11 +58,11 @@ Future<void> showCountrySelectorBottomSheet({
   TextStyle? searchTextStyle,
   // Uses to determine the textStyle of the selectedCountry
   TextStyle? selectedCountryTextStyle =
-      const TextStyle(fontWeight: FontWeight.bold),
+      const TextStyle(fontWeight: FontWeight.w500),
   // Uses to determine the textStyle of the WitoutMatchText when there does not the match match with serach pattern
   TextStyle? withoutMatchTextStyle = const TextStyle(
     color: Colors.black,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w500,
   ),
   // Uses to determine the textStyle of Continue Button
   TextStyle? continueBtnTextStyle = const TextStyle(
@@ -85,6 +86,9 @@ Future<void> showCountrySelectorBottomSheet({
       22.5,
     ),
   ),
+  // callback of the widget when the widget is built
+  required Function onBuild,
+  required Function onClose,
 }) async {
   // #
   await showModalBottomSheet(
@@ -128,6 +132,8 @@ Future<void> showCountrySelectorBottomSheet({
           continueBtnOverlayColor: continueBtnOverlayColor,
           textFieldborderRadius: textFieldborderRadius,
           continueBtnRadius: continueBtnRadius,
+          onBuild: onBuild,
+          onClose: onClose,
         ),
       ),
     ),
@@ -192,14 +198,16 @@ class CountrySelectorWidget extends StatefulWidget {
   final BorderRadius textFieldborderRadius;
   // Uses to determine borderRadius of Continue Button
   final BorderRadius continueBtnRadius;
+  final Function onBuild;
+  final Function onClose;
 
   const CountrySelectorWidget({
     super.key,
     this.withDialCode = false,
     this.refCountryCode,
     this.customAppBar,
-    this.bottomAppBarHeight = 75,
-    this.continueBtnPadding = const EdgeInsets.symmetric(vertical: 13.5),
+    this.bottomAppBarHeight = 50,
+    this.continueBtnPadding = const EdgeInsets.symmetric(vertical: 5.5),
     this.selectedLocale = SelectedLocale.en,
     this.showSelectedWidget = true,
     this.aniDuration = const Duration(seconds: 1),
@@ -216,10 +224,10 @@ class CountrySelectorWidget extends StatefulWidget {
     ),
     this.searchTextStyle,
     this.selectedCountryTextStyle =
-        const TextStyle(fontWeight: FontWeight.bold),
+        const TextStyle(fontWeight: FontWeight.w500),
     this.withoutMatchTextStyle = const TextStyle(
       color: Colors.black,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.w500,
     ),
     this.continueBtnTextStyle = const TextStyle(
       color: Colors.black,
@@ -235,13 +243,16 @@ class CountrySelectorWidget extends StatefulWidget {
         22.5,
       ),
     ),
+    required this.onBuild,
+    required this.onClose,
   });
 
   @override
   CountrySelectorWidgetState createState() => CountrySelectorWidgetState();
 }
 
-class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
+class CountrySelectorWidgetState extends State<CountrySelectorWidget>
+    with AfterLayoutMixin {
   late ScrollController _scrollController;
   late List<Country> _countries;
   late ValueNotifier<List<Country>?> _countriesNotifi;
@@ -249,6 +260,28 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
   late TextUtil _textUtil;
   late FocusNode _focusNode;
   late ValueNotifier<bool> _focusNotifi;
+
+  EdgeInsets textPadding({double padding = 3.25}) {
+    switch (widget.selectedLocale) {
+      case SelectedLocale.zhCH:
+      case SelectedLocale.zhHK:
+        return EdgeInsets.only(bottom: padding);
+      case SelectedLocale.en:
+      default:
+        return EdgeInsets.zero;
+    }
+  }
+
+  double contextPadding() {
+    switch (widget.selectedLocale) {
+      case SelectedLocale.zhCH:
+      case SelectedLocale.zhHK:
+        return 15.0;
+      case SelectedLocale.en:
+      default:
+        return 13.0;
+    }
+  }
 
   @override
   void initState() {
@@ -308,12 +341,30 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
         child: Scaffold(
           appBar: widget.customAppBar ??
               AppBar(
+                surfaceTintColor: Colors.white,
                 backgroundColor: Colors.white,
                 elevation: 0.0,
                 centerTitle: true,
-                title: Text(
-                  widget.appBarText ?? _textUtil.titleStr() ?? '',
-                  style: widget.appBarTextStyle,
+                leading: IconButton(
+                  onPressed: () {
+                    widget.onClose();
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.black54,
+                  ),
+                ),
+                title: Column(
+                  children: [
+                    Padding(
+                      padding: textPadding(),
+                      child: Text(
+                        widget.appBarText ?? _textUtil.titleStr() ?? '',
+                        style: widget.appBarTextStyle,
+                      ),
+                    ),
+                  ],
                 ),
               ),
           body: Container(
@@ -357,7 +408,7 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
                         ),
                         hintStyle: widget.searchTextStyle ??
                             TextStyle(
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                               color: Colors.grey.withOpacity(0.85),
                             ),
                         focusedBorder: OutlineInputBorder(
@@ -370,7 +421,15 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
                           borderRadius: BorderRadius.all(Radius.circular(18.5)),
                           borderSide: BorderSide(color: Colors.transparent),
                         ),
-                        contentPadding: const EdgeInsets.only(top: 13.5),
+                        contentPadding: EdgeInsets.only(
+                          top: widget.selectedLocale == SelectedLocale.en
+                              ? 13.0
+                              : 15.0,
+                          bottom: widget.selectedLocale == SelectedLocale.en
+                              ? 0.0
+                              : 15.5,
+                          right: 15.0,
+                        ),
                       ),
                     ),
                   ),
@@ -522,51 +581,51 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
                     },
                   ),
                 ),
-                SizedBox(
-                  height: widget.bottomAppBarHeight,
-                  child: Padding(
-                    padding: widget.continueBtnPadding,
-                    child: ValueListenableBuilder<Country?>(
-                      valueListenable: _selectedCountryNotifi,
-                      builder: (context, isSelected, child) {
-                        return Opacity(
-                          opacity: isSelected != null ? 1.0 : 0.65,
-                          child: IgnorePointer(
-                            ignoring: isSelected != null ? false : true,
-                            child: ElevatedButton(
-                              style: ButtonStyle(
-                                overlayColor: MaterialStateProperty.all<Color>(
-                                  widget.continueBtnOverlayColor,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5.5, top: 2.5),
+                  child: SizedBox(
+                    height: 65,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.5),
+                      child: ValueListenableBuilder<Country?>(
+                        valueListenable: _selectedCountryNotifi,
+                        builder: (context, isSelected, child) {
+                          return Opacity(
+                            opacity: isSelected != null ? 1.0 : 0.65,
+                            child: IgnorePointer(
+                              ignoring: isSelected != null ? false : true,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  elevation: 5.5,
+                                  shadowColor: Colors.black54,
+                                  backgroundColor: const Color(0xFF4766B7),
+                                  foregroundColor: Colors.white,
+                                  surfaceTintColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.5),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 5.5,
+                                    horizontal: 24.5,
+                                  ),
                                 ),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                  widget.continueBtnBgColor,
+                                onPressed: () => widget.onSelectedCountry(
+                                  _selectedCountryNotifi.value!,
                                 ),
-                                shape: MaterialStateProperty.all(
-                                  RoundedRectangleBorder(
-                                    borderRadius: widget.continueBtnRadius,
+                                child: Padding(
+                                  padding: textPadding(),
+                                  child: Text(
+                                    widget.continueBtnText ??
+                                        _textUtil.continueStr() ??
+                                        '',
+                                    style: widget.continueBtnTextStyle,
                                   ),
                                 ),
                               ),
-                              onPressed: () => widget.onSelectedCountry(
-                                _selectedCountryNotifi.value!,
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: isSelected != null ? 13.5 : 10.0,
-                                  horizontal: isSelected != null ? 30 : 20.0,
-                                ),
-                                child: Text(
-                                  widget.continueBtnText ??
-                                      _textUtil.continueStr() ??
-                                      '',
-                                  style: widget.continueBtnTextStyle,
-                                ),
-                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 )
@@ -576,6 +635,11 @@ class CountrySelectorWidgetState extends State<CountrySelectorWidget> {
         ),
       ),
     );
+  }
+
+  @override
+  FutureOr<void> afterFirstLayout(BuildContext context) {
+    widget.onBuild();
   }
 }
 
@@ -624,6 +688,17 @@ class CountryCardWidgetState extends State<CountryCardWidget>
     super.dispose();
   }
 
+  EdgeInsets textPadding({double padding = 3.25}) {
+    switch (widget.selectedLocale) {
+      case SelectedLocale.zhCH:
+      case SelectedLocale.zhHK:
+        return EdgeInsets.only(bottom: padding);
+      case SelectedLocale.en:
+      default:
+        return EdgeInsets.zero;
+    }
+  }
+
   String getCountryName() {
     switch (widget.selectedLocale) {
       case SelectedLocale.zhCH:
@@ -653,6 +728,7 @@ class CountryCardWidgetState extends State<CountryCardWidget>
           onTap: () => widget.onClickSelected(),
           child: Card(
             color: Colors.white,
+            surfaceTintColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: const BorderRadius.all(
                 Radius.circular(
@@ -696,18 +772,23 @@ class CountryCardWidgetState extends State<CountryCardWidget>
                         ),
                         Text(
                           widget.country.code,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.grey,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w500,
                             letterSpacing: 1.15,
                           ),
                         ),
-                        Text(
-                          getCountryName(),
-                          maxLines: 2,
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
+                        Padding(
+                          padding: textPadding(padding: 1.75),
+                          child: Text(
+                            getCountryName(),
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -732,7 +813,7 @@ class CountryCardWidgetState extends State<CountryCardWidget>
                             widget.country.dialCode,
                             style: const TextStyle(
                               color: Colors.grey,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                               letterSpacing: 1.15,
                             ),
                           )

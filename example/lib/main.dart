@@ -29,7 +29,7 @@ class App extends StatelessWidget {
           title: const Text(
             '[onSelectedCountry]',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w500,
             ),
           ),
           content: Text('${country.toJson()}'),
@@ -39,7 +39,7 @@ class App extends StatelessWidget {
               child: const Text(
                 'Close',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -78,6 +78,8 @@ class App extends StatelessWidget {
                     country,
                   );
                 },
+                onBuild: () {},
+                onClose: () {},
               );
             },
             child: Center(
@@ -92,7 +94,7 @@ class App extends StatelessWidget {
                   "showBottomSheet",
                   style: TextStyle(
                     color: Colors.black,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
